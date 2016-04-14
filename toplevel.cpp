@@ -1,22 +1,10 @@
 #include "toplevel.h"
 
-#define NOTHING 0
-#define WAYPOINT 1
-#define WALL 2
-
-#define UNVISITED 0
-#define OPEN 1
-#define CLOSED 2
-
 world_t world;
 holder_t o;
 
 int manhattan(point_t *p1, point_t *p2) {
 	return p2->x - p1->x + p2->y - p1->y;
-}
-
-void set_unvisited(uint8 x, uint8 y) {
-	o.nodes[x][y].status = UNVISITED;
 }
 
 void set_closed(uint8 x, uint8 y) {
@@ -137,23 +125,21 @@ void toplevel(hls::stream<uint32> &input, hls::stream<uint32> &output) {
 		o.nodes[wt.x][wt.y].type = WAYPOINT;
 	}
 
-	// create walls in grid2
+	// create walls
 	for (int i = 0; i < world.walls_size; i++) {
-		switch (world.walls[i].direction) {
-		case 0: // horizontal
-			for (int j = 0; j < world.walls[i].length; j++) {
-				if (world.walls[i].x + j < world.size) {
-					o.nodes[world.walls[i].x + j][world.walls[i].y].type = WALL;
-				}
+		for (int j = 0; j < world.walls[i].length; j++) {
+			switch (world.walls[i].direction) {
+			case 0: // horizontal
+					if (world.walls[i].x + j < world.size) {
+						o.nodes[world.walls[i].x + j][world.walls[i].y].type = WALL;
+					}
+				break;
+			case 1: // vertical
+					if (world.walls[i].y + j < world.size) {
+						o.nodes[world.walls[i].x][world.walls[i].y + j].type = WALL;
+					}
+				break;
 			}
-			break;
-		case 1: // vertical
-			for (int j = 0; j < world.walls[i].length; j++) {
-				if (world.walls[i].y + j < world.size) {
-					o.nodes[world.walls[i].x][world.walls[i].y + j].type = WALL;
-				}
-			}
-			break;
 		}
 	}
 
@@ -164,12 +150,19 @@ void toplevel(hls::stream<uint32> &input, hls::stream<uint32> &output) {
 	//		printf("\r\n");
 	//	}
 
-	point_t start = {world.waypoints[0].x, world.waypoints[0].y};
-	point_t end = {world.waypoints[1].x, world.waypoints[1].y};
+	int total_cost;
+	point_t start_finish = {world.waypoints[0].x, world.waypoints[0].y};
 
-	int cost = a_star_2(start, end);
+	for (int i = 1; i < world.waypoints_size; i++) {
 
-	output.write(cost);
+
+		int cost = a_star_2(start, end);
+		printf("Intermediate cost: %d\r\n", cost);
+
+		total_cost += cost;
+	}
+
+	output.write(total_cost);
 
 	return;
 }

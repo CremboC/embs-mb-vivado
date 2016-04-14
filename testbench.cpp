@@ -15,11 +15,12 @@ int main(void) {
 	to_hw.write(0x05010203);
 	to_hw.write(0x02000604);
 
-	to_hw.write(2); // waypoints size
+	to_hw.write(3); // waypoints size
 
 	// write waypoints -- y/x
 	to_hw.write(0x0202);
 	to_hw.write(0x0505);
+	to_hw.write(0x0807);
 
 	toplevel(to_hw, from_hw);
 
