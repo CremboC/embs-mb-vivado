@@ -10,6 +10,7 @@
 typedef ap_uint<32> uint32;
 typedef ap_int<32> int32;
 typedef ap_uint<2> uint2;
+typedef ap_uint<12> uint12;
 typedef unsigned char uint8;
 
 typedef struct __attribute__((packed)) {
@@ -17,16 +18,16 @@ typedef struct __attribute__((packed)) {
 	uint8 y;
 } point_t;
 
-typedef struct __attribute__((packed))  {
-	point_t point;
-	int cost;
-} node_t;
-
-typedef struct __attribute__((packed)) {
-	int size;
-	bool exists[MAX_SIZE];
-	node_t items[MAX_SIZE];
-} list_t;
+//typedef struct __attribute__((packed))  {
+//	point_t point;
+//	int cost;
+//} node_t;
+//
+//typedef struct __attribute__((packed)) {
+//	int size;
+//	bool exists[MAX_SIZE];
+//	node_t items[MAX_SIZE];
+//} list_t;
 
 typedef struct __attribute__((packed)) {
 	uint8 x;

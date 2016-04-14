@@ -4,47 +4,141 @@
 #define WAYPOINT 1
 #define WALL 2
 
-world_t world;
-
-// [x][y]
-uint2 grid[MAX_WORLD_SIZE][MAX_WORLD_SIZE];
+#define UNVISITED 0
+#define OPEN 1
+#define CLOSED 2
 
 int manhattan(point_t p1, point_t p2) {
 	return p2.x - p1.x + p2.y - p1.y;
 }
 
-int a_star(point_t start, point_t end) {
+world_t world;
 
+// [x][y]
+uint2 grid[MAX_WORLD_SIZE][MAX_WORLD_SIZE];
+
+typedef struct __attribute__((packed)) {
+	point_t point = {0, 0};
+	uint12 cost = 0;
+	uint2 status = UNVISITED; // 0 - unvisited, 1 - open, 2 - closed
+	bool exist = false;
+	uint2 type = NOTHING;
+} node_t;
+
+typedef struct __attribute__((packed)) {
+	int size_closed;
+	int size_open;
+	node_t nodes[MAX_WORLD_SIZE][MAX_WORLD_SIZE];
+} l_t;
+
+l_t o;
+
+bool is_empty(bool closed) {
+	if (closed) return o.size_closed;
+	else return o.size_open;
+}
+
+int in_list(node_t n, bool closed, point_t *p) {
+	for (int x = 0; x < MAX_WORLD_SIZE; x++) {
+		for (int y = 0; y < MAX_WORLD_SIZE; y++) {
+			if (closed) {
+				if (o.nodes[x][y].exist && o.nodes[x][y].status == CLOSED) {
+					if (o.nodes[x][y].point.x == n.point.x && o.nodes[x][y].point.y == n.point.y) {
+						p->x = x;
+						p->y = y;
+						return 1;
+					}
+				}
+			} else {
+				if (o.nodes[x][y].exist) {
+					if (o.nodes[x][y].point.x == n.point.x && o.nodes[x][y].point.y == n.point.y) {
+						p->x = x;
+						p->y = y;
+						return 1;
+					}
+				}
+			}
+
+		}
+	}
+
+	return -1;
+}
+
+void set_unvisited(uint8 x, uint8 y) {
+	o.nodes[x][y].status = UNVISITED;
+}
+
+void set_closed(uint8 x, uint8 y) {
+	o.nodes[x][y].status = CLOSED;
+	o.size_closed++;
+}
+
+void set_open(uint8 x, uint8 y) {
+	o.nodes[x][y].status = OPEN;
+	o.size_open++;
+}
+
+void change_cost(uint8 x, uint8 y, uint12 new_cost) {
+	o.nodes[x][y].cost = new_cost;
+}
+
+void add(uint8 x, uint8 y) {
+	o.nodes[x][y].exist = true;
+}
+
+void remove(uint8 x, uint8 y) {
+	o.nodes[x][y].exist = false;
+}
+
+void check_neighbor(uint8 x, uint8 y, node_t n) {
+	// For the points that are north, south, east and west from n.point (and that are not walls)
+	if (x < world.size && grid[x][y] != WALL) {
+		// Create a node m with the neighbour point and cost n.cost + 1
+		uint8 x = (uint8) (x);
+		uint8 y = y;
+		node_t m = {{x, y}, n.cost + 1};
+
+		if (!o.nodes[x][y].status != CLOSED) { // If the neighbour point is not in a node in closed
+
+			// If the point is in open but has a higher cost than m.cost
+			if (o.nodes[x][y].status == OPEN && o.nodes[x][y].cost > m.cost) {
+				change_cost(x, y, m.cost); // replace the cost with m.cost
+			} else if (o.nodes[x][y].status != OPEN) { // If the point is not in open, add m to open
+				o.nodes[x][y].status = OPEN;
+			}
+		}
+	}
+}
+
+int a_star_2(point_t start, point_t end) {
 	// Initialise closed to be the empty list.
-	list_t closed;
-	l_init(&closed);
+	// ...
 
-	// Initialise open ...
-	list_t open;
-	l_init(&open);
+	// Initialise open to contain a node of start, with a cost of 0
+	set_open(start.x, start.y);
+	add(start.x, start.y);
 
-	// ... to contain a node of start, with a cost of 0
-	node_t start_node = {start, 0};
-	l_add(&open, start_node);
-
-	while (!l_is_empty(&open)) { // Whilst there are nodes in the open list
-		int min_heuristic_index = -1;
+	while (!is_empty(false)) { // Whilst there are nodes in the open list
+		point_t min_heuristic_index;
 		int min_heuristic = 100000000;
 
 		// Find the node (n) in open with the lowest n.cost + manhattan(n.point, end)
-		for (int i = 0; i < MAX_SIZE; i++) {
-			if (open.exists[i]) {
-				int heuristic = open.items[i].cost + manhattan(open.items[i].point, end);
-				if (heuristic < min_heuristic) {
-					min_heuristic_index = i;
-					min_heuristic = heuristic;
+		for (int x = 0; x < MAX_WORLD_SIZE; x++) {
+			for (int y = 0; y < MAX_WORLD_SIZE; y++) {
+				if (o.nodes[x][y].status == OPEN) {
+					int heuristic = o.nodes[x][y].cost + manhattan(o.nodes[x][y].point, end);
+					if (heuristic < min_heuristic) {
+						min_heuristic_index = {x, y};
+						min_heuristic = heuristic;
+					}
 				}
 			}
 		}
 
-		node_t n = open.items[min_heuristic_index];
-		l_remove(&open, min_heuristic_index); // Remove n from open
-		l_add(&closed, n); // Add n to closed
+		// Remove n from open and add n to closed
+		node_t n = o.nodes[min_heuristic_index.x][min_heuristic_index.y];
+		set_closed(min_heuristic_index.x, min_heuristic_index.y);
 
 		// If n.point is end then the search is complete. n.cost is the length of the path.
 		if (n.point.x == end.x && n.point.y == end.y) {
@@ -53,66 +147,10 @@ int a_star(point_t start, point_t end) {
 		}
 
 		// For the points that are north, south, east and west from n.point (and that are not walls)
-		if (n.point.x + 1 < world.size && grid[n.point.x + 1][n.point.y] != WALL) {
-			// Create a node m with the neighbour point and cost n.cost + 1
-			node_t m = {{n.point.x + 1, n.point.y}, n.cost + 1};
-
-			if (l_in_list(&closed, m) == -1) { // If the neighbour point is not in a node in closed
-				int index = l_in_list(&open, m);
-
-				if (index > -1 && m.cost < open.items[index].cost) { // If the point is in open but has a higher cost than m.cost
-					open.items[index].cost = m.cost; // replace the cost with m.cost
-				} else if (index == -1) { // If the point is not in open, add m to open
-					l_add(&open, m);
-				}
-			}
-		}
-
-		if (n.point.x - 1 >= 0 && grid[n.point.x - 1][n.point.y] != WALL) {
-			// Create a node m with the neighbour point and cost n.cost + 1
-			node_t m = {{n.point.x - 1, n.point.y}, n.cost + 1};
-
-			if (l_in_list(&closed, m) == -1) { // If the neighbour point is not in a node in closed
-				int index = l_in_list(&open, m);
-
-				if (index > -1 && m.cost < open.items[index].cost) { // If the point is in open but has a higher cost than m.cost
-					open.items[index].cost = m.cost; // replace the cost with m.cost
-				} else if (index == -1) { // If the point is not in open, add m to open
-					l_add(&open, m);
-				}
-			}
-		}
-
-		if (n.point.y + 1 < world.size && grid[n.point.x][n.point.y + 1] != WALL) {
-			// Create a node m with the neighbour point and cost n.cost + 1
-			node_t m = {{n.point.x, n.point.y + 1}, n.cost + 1};
-
-			if (l_in_list(&closed, m) == -1) { // If the neighbour point is not in a node in closed
-				int index = l_in_list(&open, m);
-
-				if (index > -1 && m.cost < open.items[index].cost) { // If the point is in open but has a higher cost than m.cost
-					open.items[index].cost = m.cost; // replace the cost with m.cost
-				} else if (index == -1) { // If the point is not in open, add m to open
-					l_add(&open, m);
-				}
-			}
-		}
-
-
-		if (n.point.y - 1 >= 0 && grid[n.point.x][n.point.y - 1] != WALL) {
-			// Create a node m with the neighbour point and cost n.cost + 1
-			node_t m = {{n.point.x, n.point.y - 1}, n.cost + 1};
-
-			if (l_in_list(&closed, m) == -1) { // If the neighbour point is not in a node in closed
-				int index = l_in_list(&open, m);
-
-				if (index > -1 && m.cost < open.items[index].cost) { // If the point is in open but has a higher cost than m.cost
-					open.items[index].cost = m.cost; // replace the cost with m.cost
-				} else if (index == -1) { // If the point is not in open, add m to open
-					l_add(&open, m);
-				}
-			}
-		}
+		check_neighbor(n.point.x + 1, n.point.y, n);
+		check_neighbor(n.point.x - 1, n.point.y, n);
+		check_neighbor(n.point.x, n.point.y + 1, n);
+		check_neighbor(n.point.x, n.point.y - 1, n);
 	}
 
 	return -1;
@@ -181,7 +219,7 @@ void toplevel(hls::stream<uint32> &input, hls::stream<uint32> &output) {
 	point_t start = {world.waypoints[0].x, world.waypoints[0].y};
 	point_t end = {world.waypoints[1].x, world.waypoints[1].y};
 
-	int cost = a_star(start, end);
+	int cost = a_star_2(start, end);
 
 	output.write(cost);
 
