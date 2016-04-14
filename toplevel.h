@@ -1,0 +1,14 @@
+#ifndef __TOPLEVEL_H_
+#define __TOPLEVEL_H_
+ 
+#include <stdio.h>
+#include <stdlib.h>
+#include <ap_int.h>
+#include <hls_stream.h>
+#include "list.h"
+#include "defs.h"
+ 
+//Prototypes
+void toplevel(hls::stream<uint32> &input, hls::stream<uint32> &output);
+ 
+#endif 
