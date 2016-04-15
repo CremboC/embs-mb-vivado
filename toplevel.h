@@ -29,17 +29,20 @@ typedef ap_uint<1> uint1;
 typedef ap_uint<12> uint12;
 typedef ap_uint<16> uint16;
 typedef ap_uint<4> uint4;
+typedef ap_uint<6> uint6;
 typedef unsigned char uint8;
 
 typedef struct {
-	uint8 x;
-	uint8 y;
+	uint6 x;
+	uint6 y;
+	bool exists;
 } point_t;
 
 typedef struct {
 	uint12 cost;
 	uint2 status; // 0 - unvisited, 1 - open, 2 - closed
 	uint2 type;
+	point_t parent;
 } node_t;
 
 typedef struct {
@@ -50,8 +53,8 @@ typedef struct {
 //typedef point_t waypoint_t;
 
 typedef struct {
-	uint8 x;
-	uint8 y;
+	uint6 x;
+	uint6 y;
 	bool exists;
 } waypoint_t;
 
@@ -61,8 +64,8 @@ typedef struct {
 } next_t;
 
 typedef struct {
-	uint8 x;
-	uint8 y;
+	uint6 x;
+	uint6 y;
 	uint1 direction; // 0 horizontal; 1 vertical
 	uint8 length;
 } wall_t;
