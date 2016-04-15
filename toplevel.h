@@ -27,46 +27,47 @@ typedef ap_int<32> int32;
 typedef ap_uint<2> uint2;
 typedef ap_uint<1> uint1;
 typedef ap_uint<12> uint12;
+typedef ap_uint<16> uint16;
+typedef ap_uint<4> uint4;
 typedef unsigned char uint8;
 
-typedef struct __attribute__((packed)) {
+typedef struct {
 	uint8 x;
 	uint8 y;
 } point_t;
 
-typedef struct __attribute__((packed)) {
+typedef struct {
 	uint12 cost;
 	uint2 status; // 0 - unvisited, 1 - open, 2 - closed
 	uint2 type;
 } node_t;
 
-typedef struct __attribute__((packed)) {
+typedef struct {
 	uint12 size_open;
 	node_t nodes[MAX_WORLD_SIZE][MAX_WORLD_SIZE];
 } holder_t;
 
-typedef point_t waypoint_t;
+//typedef point_t waypoint_t;
 
 typedef struct {
-	waypoint_t w;
-	bool used;
+	uint8 x;
+	uint8 y;
 	bool exists;
-	uint8 order;
-} search_waypoint_t;
+} waypoint_t;
 
 typedef struct {
 	uint8 index;
 	uint12 cost;
 } next_t;
 
-typedef struct __attribute__((packed)) {
+typedef struct {
 	uint8 x;
 	uint8 y;
 	uint1 direction; // 0 horizontal; 1 vertical
 	uint8 length;
 } wall_t;
 
-typedef struct __attribute__((packed)) {
+typedef struct {
 	uint8 size;
 	uint8 waypoints_size;
 	waypoint_t waypoints[MAX_WAYPOINTS];
