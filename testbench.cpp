@@ -4,16 +4,17 @@ int main(void) {
 
 	hls::stream<uint32> to_hw, from_hw;
 
-	uint32 should_be = 12;
+	uint32 should_be = 20;
 
 	to_hw.write(10); // size
 
-	to_hw.write(3); // walls size
+	to_hw.write(4); // walls size
 
 	// write walls
 	to_hw.write(0x09000101);
 	to_hw.write(0x05010203);
 	to_hw.write(0x02000604);
+	to_hw.write(0x04010306);
 
 	to_hw.write(3); // waypoints size
 
