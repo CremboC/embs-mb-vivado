@@ -305,20 +305,32 @@ void toplevel(hls::stream<uint32> &input, hls::stream<uint32> &output) {
 
 		a_star(from, to);
 
+		o.nodes[from.x][from.x].parent.exists = false;
+
+		printf("(%d, %d)\r\n", (int) to.x, (int) to.y);
+
 		point_t parent = o.nodes[to.x][to.y].parent;
 		absolute_path[current++].x = parent.x;
 		absolute_path[current++].y = parent.y;
 
+
+
 		bool found = false;
 		while (!found) {
-			if (parent.x != from.x && parent.y == from.y) {
+			printf("(%d, %d)\r\n", (int) parent.x, (int) parent.y);
+			if (parent.exists) {
 				parent = o.nodes[parent.x][parent.y].parent;
+
 				absolute_path[current++].x = parent.x;
 				absolute_path[current++].y = parent.y;
+
+
 			} else {
 				found = true;
 			}
 		}
+
+		printf("(%d, %d)\r\n", (int) from.x, (int) from.y);
 
 		// do A*
 		// traverse from end to start by checking "parent"
@@ -326,9 +338,9 @@ void toplevel(hls::stream<uint32> &input, hls::stream<uint32> &output) {
 		reset_world();
 	}
 
-	for (int i = 0; i <= total_cost; i++) {
-		printf("(%d, %d)\r\n", (int) absolute_path[i].x, (int) absolute_path[i].y);
-	}
+//	for (int i = 0; i <= total_cost; i++) {
+//		printf("(%d, %d)\r\n", (int) absolute_path[i].x, (int) absolute_path[i].y);
+//	}
 
 	output.write(total_cost);
 
