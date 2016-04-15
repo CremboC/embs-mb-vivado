@@ -3,6 +3,8 @@
 world_t world;
 holder_t o;
 
+search_waypoint_t waypoints[MAX_WAYPOINTS] = {};
+
 int manhattan(uint8 x1, uint8 y1, uint8 x2, uint8 y2) {
 	return x2 - x1 + y2 - y1;
 }
@@ -35,7 +37,7 @@ void check_neighbor(uint8 x, uint8 y, node_t *n, bool check) {
 	}
 }
 
-int a_star(point_t start, point_t end) {
+int a_star(waypoint_t start, waypoint_t end) {
 	// Initialise closed to be the empty list.
 	// ...
 
@@ -77,6 +79,42 @@ int a_star(point_t start, point_t end) {
 	}
 
 	return -1;
+}
+
+void reset_world() {
+	for (int x = 0; x < MAX_WORLD_SIZE; x++) {
+		for (int y = 0; y < MAX_WORLD_SIZE; y++) {
+			o.nodes[x][y].cost = 0;
+			o.nodes[x][y].status = UNVISITED;
+		}
+	}
+}
+
+next_t find_next(search_waypoint_t start) {
+	uint12 min_cost = 4095;
+	uint8 min_index = -1;
+	next_t n;
+
+	for (int i = 0; i < world.waypoints_size; i++) {
+		search_waypoint_t end = waypoints[i];
+
+		if (end.exists && !end.used) {
+			reset_world();
+			uint12 cost = a_star(start.w, end.w);
+
+			printf("%d\r\n", (int) cost);
+
+			if (cost < min_cost) {
+				min_cost = cost;
+				min_index = i;
+			}
+		}
+	}
+
+	n.cost = min_cost;
+	n.index = min_index;
+
+	return n;
 }
 
 //Top-level function
@@ -136,32 +174,62 @@ void toplevel(hls::stream<uint32> &input, hls::stream<uint32> &output) {
 		o.nodes[wt.x][wt.y].type = WAYPOINT;
 	}
 
+	int total_cost = 0;
+	int order = 0;
+	for (int i = 0; i < world.waypoints_size; i++) {
+		waypoints[i].w = world.waypoints[i];
+		waypoints[i].used = false;
+		waypoints[i].exists = true;
+		waypoints[i].order = 0;
+	}
+
+	search_waypoint_t s = waypoints[0];
+	waypoints[0].used = true;
+	waypoints[0].order = order++;
+
+	bool all_used = false;
+	while (!all_used) {
+		next_t n = find_next(s); // find next waypoint to visit
+		total_cost += n.cost; // add the cost to get there
+		waypoints[n.index].used = true; // and mark it as used so it's not visited again
+		waypoints[n.index].order = order++;
+
+		printf("Intermediate cost: %d\r\n", total_cost);
+
+		// prepare for next iteration by setting the start waypoint as the one we just got to
+		s = waypoints[n.index];
+
+		// check if there are any unused waypoints
+		all_used = true;
+		for (int i = 1; i < world.waypoints_size; i++) {
+			if (waypoints[i].exists && !waypoints[i].used) {
+				all_used = false;
+				break;
+			}
+		}
+	}
+
+	int last_waypoint;
+	for (int i = 0; i < world.waypoints_size; i++) {
+		if (waypoints[i].order == order - 1) {
+			last_waypoint = i;
+			break;
+		}
+	}
+
+	// return to start/finish line
+	reset_world();
+	total_cost += a_star(waypoints[last_waypoint].w, waypoints[0].w);
+
+	output.write(total_cost);
+
+	return;
+}
+
 //	for (int x = 0; x < world.size; x++) {
 //		for (int y = 0; y < world.size; y++) {
 //			printf("%d ", (int) o.nodes[y][x].type);
 //		}
 //		printf("\r\n");
 //	}
-
-	int total_cost;
-//	point_t start_finish = {world.waypoints[0].x, world.waypoints[0].y};
-//
-//	for (int i = 1; i < world.waypoints_size; i++) {
-//
-//
-//		int cost = a_star_2(start, end);
-//		printf("Intermediate cost: %d\r\n", cost);
-//
-//		total_cost += cost;
-//	}
-
-	point_t start = {world.waypoints[0].x, world.waypoints[0].y};
-	point_t end = {world.waypoints[1].x, world.waypoints[1].y};
-
-	total_cost = a_star(start, end);
-
-	output.write(total_cost);
-
-	return;
-}
 

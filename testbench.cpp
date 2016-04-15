@@ -8,20 +8,22 @@ int main(void) {
 
 	to_hw.write(10); // size
 
-	to_hw.write(4); // walls size
+	to_hw.write(3); // walls size
 
 	// write walls
 	to_hw.write(0x09000101);
 	to_hw.write(0x05010203);
 	to_hw.write(0x02000604);
-	to_hw.write(0x04010306);
+//	to_hw.write(0x04010306);
 
-	to_hw.write(3); // waypoints size
+	to_hw.write(2); // waypoints size
 
 	// write waypoints -- y/x
-	to_hw.write(0x0202);
-	to_hw.write(0x0505);
-	to_hw.write(0x0807);
+//	to_hw.write(0x0202);
+//	to_hw.write(0x0505);
+//	to_hw.write(0x0807);
+	to_hw.write(0x0000);
+	to_hw.write(0x0405);
 
 	toplevel(to_hw, from_hw);
 

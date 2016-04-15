@@ -47,6 +47,18 @@ typedef struct __attribute__((packed)) {
 
 typedef point_t waypoint_t;
 
+typedef struct {
+	waypoint_t w;
+	bool used;
+	bool exists;
+	uint8 order;
+} search_waypoint_t;
+
+typedef struct {
+	uint8 index;
+	uint12 cost;
+} next_t;
+
 typedef struct __attribute__((packed)) {
 	uint8 x;
 	uint8 y;
