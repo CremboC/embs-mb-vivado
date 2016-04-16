@@ -199,6 +199,7 @@ uint12 calculate_min_cost(uint4 *solution)
 
 //Top-level function
 void toplevel(hls::stream<uint32> &input, hls::stream<uint32> &output) {
+#pragma HLS ARRAY_PARTITION variable=distances dim=1
 #pragma HLS RESOURCE variable=input core=AXI4Stream
 #pragma HLS RESOURCE variable=output core=AXI4Stream
 #pragma HLS INTERFACE ap_ctrl_none port=return
