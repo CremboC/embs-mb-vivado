@@ -31,6 +31,18 @@ int main(void) {
 	uint32 cost;
 	from_hw.read(cost);
 
+	for (int i = 0; i < cost; i++) {
+		uint32 in;
+		from_hw.read(in);
+
+		printf("%08x ", (int) in);
+
+		uint8 x = (uint8) (in & 0xFF);
+		uint8 y = (uint8) ((in >> 8) & 0xFF);
+
+		printf("(%d, %d) \r\n", (int) x, (int) y);
+	}
+
 	printf("Got cost: %d\r\n", (int) cost);
 	if (cost != should_be) {
 		return 1;

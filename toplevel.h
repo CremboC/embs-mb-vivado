@@ -21,6 +21,11 @@
 #define HORIZONTAL 0
 #define VERTICAL 1
 
+#define NORTH 0
+#define EAST 1
+#define SOUTH 2
+#define WEST 3
+
 //Typedefs
 typedef ap_uint<32> uint32;
 typedef ap_int<32> int32;
@@ -35,14 +40,14 @@ typedef unsigned char uint8;
 typedef struct {
 	uint6 x;
 	uint6 y;
-	bool exists;
 } point_t;
 
 typedef struct {
 	uint12 cost;
 	uint2 status; // 0 - unvisited, 1 - open, 2 - closed
 	uint2 type;
-	point_t parent;
+	uint2 parent_direction; // 0 - north, 1 - east, 2 - south, 3 - west
+//	point_t parent;
 } node_t;
 
 typedef struct {
@@ -77,6 +82,11 @@ typedef struct {
 	uint8 walls_size;
 	wall_t walls[MAX_WALLS];
 } world_t;
+
+typedef struct {
+	waypoint_t w;
+	uint12 costs[MAX_WAYPOINTS];
+} distance_t;
  
 //Prototypes
 void toplevel(hls::stream<uint32> &input, hls::stream<uint32> &output);
