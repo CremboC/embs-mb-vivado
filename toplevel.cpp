@@ -26,6 +26,7 @@ void check_neighbor(uint8 x, uint8 y, uint8 parent_x, uint8 parent_y, node_t *n,
 		switch (o.nodes[x][y].status) {
 		case OPEN: // if open then potentially change the cost with the new cost as we found a shorter route
 			if (o.nodes[x][y].status == OPEN && o.nodes[x][y].cost > new_cost) {
+				o.nodes[x][y].parent_direction = direction;
 				o.nodes[x][y].cost = new_cost; // replace the cost with m.cost
 			}
 			break;
@@ -91,11 +92,11 @@ void reset_world() {
 	}
 }
 
-uint12 calculate_distance(uint8 *a) {
+uint32 calculate_distance(uint8 *a) {
     // start with distance from start point to the first point in the permutation
-	uint12 total_cost = distances[0].costs[a[0]];
+	uint32 total_cost = distances[0].costs[a[0]];
 
-	for (uint8 i = 0; i < world.waypoints_size - 2; i++) {
+	for (int i = 0; i < world.waypoints_size - 1; i++) {
 		if (i + 1 > world.waypoints_size) break;
 		uint8 from_index = a[i];
 		uint8 to_index = a[i + 1];
@@ -110,16 +111,11 @@ uint12 calculate_distance(uint8 *a) {
 }
 
 // from http://www.quickperm.org/01example.php
-uint12 calculate_min_cost(uint8 *solution)
-{
+uint32 calculate_min_cost(uint8 *solution) {
 	int iterations = world.waypoints_size - 1;
 
-	uint8 p[MAX_WAYPOINTS+1] = {};
-	uint8 a[MAX_WAYPOINTS] = {};
-
-	for (int i = 0; i < iterations; i++) {
-		a[i] = i + 1;
-	}
+	uint8 p[MAX_WAYPOINTS + 1] = {};
+	uint8 a[MAX_WAYPOINTS - 1] = {};
 
 	int tmp, i, j; // Upper Index i; Lower Index j
 
@@ -129,10 +125,10 @@ uint12 calculate_min_cost(uint8 *solution)
 	}
 
     // since the first "permutation" is just the array, say it is the minimum cost
-	uint12 min_cost = calculate_distance(a);
-	uint8 min_array[MAX_WAYPOINTS];
+	uint32 min_cost = calculate_distance(a);
+	uint8 min_array[MAX_WAYPOINTS - 1];
 
-	for (int k = 0; k < MAX_WAYPOINTS; k++) {
+	for (int k = 0; k < iterations; k++) {
 		min_array[k] = a[k];
 	}
 
@@ -148,10 +144,10 @@ uint12 calculate_min_cost(uint8 *solution)
         a[i] = tmp;
 
         // we have a new permutation at this point
-        uint12 cost = calculate_distance(a);
+        uint32 cost = calculate_distance(a);
         if (cost < min_cost) {
         	min_cost = cost;
-        	for (int k = 0; k < MAX_WAYPOINTS; k++) {
+        	for (int k = 0; k < iterations; k++) {
         		min_array[k] = a[k];
         	}
         }
@@ -163,7 +159,7 @@ uint12 calculate_min_cost(uint8 *solution)
         } // while(!p[i])
 	} // while(i < N)
 
-	for (int k = 0; k < MAX_WAYPOINTS; k++) {
+	for (int k = 0; k < iterations; k++) {
 		solution[k] = min_array[k];
 	}
 	return min_cost;
@@ -187,7 +183,7 @@ void toplevel(hls::stream<uint32> &input, hls::stream<uint32> &output) {
 	world.size = input.read();
 	world.walls_size = input.read();
 
-	for (uint8 i = 0; i < world.walls_size; i++) {
+	for (int i = 0; i < world.walls_size; i++) {
 		wall_t wt;
 		uint32 in = input.read();
 		wt.x = (uint8) (in & 0xFF);
@@ -199,7 +195,7 @@ void toplevel(hls::stream<uint32> &input, hls::stream<uint32> &output) {
 		o.nodes[wt.x][wt.y].type = WALL;
 
 		// create the walls at the same time
-		for (uint8 j = 0; j < wt.length; j++) {
+		for (int j = 0; j < wt.length; j++) {
 			switch (wt.direction) {
 			case HORIZONTAL:
 					if (wt.x + j < world.size) {
@@ -217,35 +213,27 @@ void toplevel(hls::stream<uint32> &input, hls::stream<uint32> &output) {
 
 	world.waypoints_size = input.read();
 
-	for (uint8 i = 0; i < world.waypoints_size; i++) {
+	for (int i = 0; i < world.waypoints_size; i++) {
 		waypoint_t wt;
 		uint32 in = input.read();
 		wt.x = (uint8) (in & 0xFF);
 		wt.y = (uint8) ((in >> 8) & 0xFF);
-		wt.exists = true;
 
 		world.waypoints[i] = wt;
 		o.nodes[wt.x][wt.y].type = WAYPOINT;
 	}
 
 	// first have your system work out the minimum distance between every pair of waypoints
-	for (uint8 i = 0; i < world.waypoints_size; i++) {
+	for (int i = 0; i < world.waypoints_size; i++) {
 		distance_t d;
 		d.w = world.waypoints[i];
 
-		for (uint8 j = 0; j < world.waypoints_size; j++) {
-			if (world.waypoints[j].exists) {
-				reset_world();
-				d.costs[j] = a_star(d.w, world.waypoints[j]);
-
-			} else {
-				d.costs[j] = 999;
-			}
+		for (int j = 0; j < world.waypoints_size; j++) {
+			reset_world();
+			d.costs[j] = a_star(d.w, world.waypoints[j]);
 		}
 		distances[i] = d;
 	}
-
-//	output.write(3);
 
 	uint8 path[MAX_WAYPOINTS];
 	uint8 full_path[MAX_WAYPOINTS + 1] = {0}; // start with start/end point
@@ -253,7 +241,7 @@ void toplevel(hls::stream<uint32> &input, hls::stream<uint32> &output) {
 
 	output.write(total_cost);
 
-	for (uint8 i = 1; i < world.waypoints_size; i++) {
+	for (int i = 1; i < world.waypoints_size; i++) {
 		full_path[i] = path[i - 1];
 	}
 	full_path[world.waypoints_size] = 0; // end with start/end point
@@ -261,7 +249,7 @@ void toplevel(hls::stream<uint32> &input, hls::stream<uint32> &output) {
 	uint12 distance;
 	uint32 out;
 	point_t parent;
-	for (uint8 i = 0; i <= world.waypoints_size; i++) {
+	for (int i = 0; i <= world.waypoints_size; i++) {
 		if (i + 1 > world.waypoints_size) break;
 
 		waypoint_t from = world.waypoints[full_path[i]];
@@ -321,6 +309,8 @@ void toplevel(hls::stream<uint32> &input, hls::stream<uint32> &output) {
 	out = world.waypoints[0].y;
 	out = (out << 8) | world.waypoints[0].x;
 	output.write(out);
+
+	reset_world();
 
 	return;
 }

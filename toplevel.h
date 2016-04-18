@@ -60,7 +60,6 @@ typedef struct {
 typedef struct {
 	uint6 x;
 	uint6 y;
-	bool exists;
 } waypoint_t;
 
 typedef struct {
