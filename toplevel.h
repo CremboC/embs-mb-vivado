@@ -51,16 +51,11 @@ typedef struct {
 } node_t;
 
 typedef struct {
-	uint32 size_open;
-	node_t nodes[MAX_WORLD_SIZE][MAX_WORLD_SIZE];
+	uint32 size_open; // Track number of open nodes
+	node_t nodes[MAX_WORLD_SIZE][MAX_WORLD_SIZE]; // The world grid
 } holder_t;
 
-//typedef point_t waypoint_t;
-
-typedef struct {
-	uint6 x;
-	uint6 y;
-} waypoint_t;
+typedef point_t waypoint_t;
 
 typedef struct {
 	uint6 x;
@@ -79,7 +74,7 @@ typedef struct {
 
 typedef struct {
 	waypoint_t w;
-	uint14 costs[MAX_WAYPOINTS];
+	uint14 costs[MAX_WAYPOINTS]; // Cost matrix from the "current" waypoint to the indexed one.
 } distance_t;
  
 //Prototypes
