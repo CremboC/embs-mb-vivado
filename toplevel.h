@@ -35,6 +35,7 @@ typedef ap_uint<12> uint12;
 typedef ap_uint<16> uint16;
 typedef ap_uint<4> uint4;
 typedef ap_uint<6> uint6;
+typedef ap_uint<14> uint14;
 typedef unsigned char uint8;
 
 typedef struct {
@@ -43,15 +44,14 @@ typedef struct {
 } point_t;
 
 typedef struct {
-	uint12 cost;
+	uint14 cost;
 	uint2 status; // 0 - unvisited, 1 - open, 2 - closed
 	uint2 type;
 	uint2 parent_direction; // 0 - north, 1 - east, 2 - south, 3 - west
-//	point_t parent;
 } node_t;
 
 typedef struct {
-	uint12 size_open;
+	uint32 size_open;
 	node_t nodes[MAX_WORLD_SIZE][MAX_WORLD_SIZE];
 } holder_t;
 
@@ -61,11 +61,6 @@ typedef struct {
 	uint6 x;
 	uint6 y;
 } waypoint_t;
-
-typedef struct {
-	uint8 index;
-	uint12 cost;
-} next_t;
 
 typedef struct {
 	uint6 x;
@@ -84,7 +79,7 @@ typedef struct {
 
 typedef struct {
 	waypoint_t w;
-	uint12 costs[MAX_WAYPOINTS];
+	uint14 costs[MAX_WAYPOINTS];
 } distance_t;
  
 //Prototypes
