@@ -3,7 +3,8 @@
 world_t world;
 holder_t o;
 
-distance_t distances[MAX_WAYPOINTS];
+// Cost matrix from the "current" waypoint to the indexed one.
+uint14 distances[MAX_WAYPOINTS][MAX_WAYPOINTS];
 
 /**
  * Calculate manhattan distance between two points. Makes sure the return value is positive.
@@ -41,7 +42,7 @@ void set_open(uint8 x, uint8 y) {
  */
 void check_neighbor(uint8 x, uint8 y, node_t &n, bool check, uint2 direction) {
 	if (check && o.nodes[x][y].type != WALL) {
-		uint16 new_cost = n.cost + 1;
+		uint14 new_cost = n.cost + 1;
 
 		switch (o.nodes[x][y].status) {
 		case OPEN: // if open then potentially change the cost with the new cost as we found a shorter route
@@ -125,7 +126,7 @@ void reset_world() {
  */
 uint14 sum_distance(uint8 *path) {
     // start with distance from start point to the first point in the permutation
-	uint14 total_cost = distances[0].costs[path[0]];
+	uint14 total_cost = distances[0][path[0]];
 
 	// loop through all the waypoints in the path
 	// loop until waypoints_size - 2 because we also increment the index by one to get the
@@ -134,11 +135,11 @@ uint14 sum_distance(uint8 *path) {
 		uint8 from_index = path[i];
 		uint8 to_index = path[i + 1];
 
-		total_cost += distances[from_index].costs[to_index];
+		total_cost += distances[from_index][to_index];
 	}
 
 	// finally add the cost from the final point in the permutation to the start/finish
-	total_cost += distances[path[world.waypoints_size - 2]].costs[0];
+	total_cost += distances[path[world.waypoints_size - 2]][0];
 
 	return total_cost;
 }
@@ -154,22 +155,22 @@ uint14 find_min_cost(uint8 *solution) {
 	// Even though the following two arrays should be N + 1 and N (hence iterations)
 	// Vivado doesn't support dynamic arrays hence we use the worst case instead.
 	uint8 p[MAX_WAYPOINTS] = {};
-	uint8 a[MAX_WAYPOINTS - 1] = {};
+	uint8 permutation[MAX_WAYPOINTS - 1] = {};
 
 	int tmp, i, j; // Upper Index i; Lower Index j
 
 	for (int i = 0; i < iterations; i++) {  // initialise arrays; a[N] can be any type
-		a[i] = i + 1;   // a[i] value is not revealed and can be arbitrary
+		permutation[i] = i + 1;   // a[i] value is not revealed and can be arbitrary
     	p[i] = i;
 	}
 
     // Since the first "permutation" is just the array, say it is the minimum cost
 	// and the best path.
-	uint14 min_cost = sum_distance(a);
+	uint14 min_cost = sum_distance(permutation);
 	uint8 min_array[MAX_WAYPOINTS - 1];
 
 	for (int k = 0; k < MAX_WAYPOINTS - 1; k++) {
-		min_array[k] = a[k];
+		min_array[k] = permutation[k];
 	}
 
 	p[iterations] = iterations; // p[N] > 0 controls iteration and the index boundary for i
@@ -179,17 +180,17 @@ uint14 find_min_cost(uint8 *solution) {
     	p[i]--;             // decrease index "weight" for i by one
         j = i % 2 * p[i];   // IF i is odd then j = p[i] otherwise j = 0
 
-        tmp = a[j];         // swap(a[j], a[i])
-        a[j] = a[i];
-        a[i] = tmp;
+        tmp = permutation[j];         // swap(a[j], a[i])
+        permutation[j] = permutation[i];
+        permutation[i] = tmp;
 
         // We have a new permutation at this point so we are going to test it
         // immediately by summing the distances between the waypoints in it.
-        uint14 cost = sum_distance(a);
+        uint14 cost = sum_distance(permutation);
         if (cost < min_cost) { // Update the min cost and min path if it is better than before
         	min_cost = cost;
         	for (int k = 0; k < MAX_WAYPOINTS - 1; k++) {
-        		min_array[k] = a[k];
+        		min_array[k] = permutation[k];
         	}
         }
 
@@ -268,14 +269,10 @@ void toplevel(hls::stream<uint32> &input, hls::stream<uint32> &output) {
 
 	// first have your system work out the minimum distance between every pair of waypoints
 	for (int i = 0; i < world.waypoints_size; i++) {
-		distance_t d;
-		d.w = world.waypoints[i];
-
 		for (int j = 0; j < world.waypoints_size; j++) {
 			reset_world();
-			d.costs[j] = a_star(d.w, world.waypoints[j]);
+			distances[i][j] = a_star(world.waypoints[i], world.waypoints[j]);
 		}
-		distances[i] = d;
 	}
 
 	uint8 path[MAX_WAYPOINTS]; // This arrays stores the solution provided by checking all permutations

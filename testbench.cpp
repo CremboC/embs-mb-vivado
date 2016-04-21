@@ -5,7 +5,7 @@ int main(void) {
 	hls::stream<uint32> to_hw, from_hw;
 
 	uint32 should_be = 226;
-	int which = 2;
+	int which = 0;
 
 	switch (which) {
 	case 0:

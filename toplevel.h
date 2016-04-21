@@ -28,12 +28,8 @@
 
 //Typedefs
 typedef ap_uint<32> uint32;
-typedef ap_int<32> int32;
 typedef ap_uint<2> uint2;
 typedef ap_uint<1> uint1;
-typedef ap_uint<12> uint12;
-typedef ap_uint<16> uint16;
-typedef ap_uint<4> uint4;
 typedef ap_uint<6> uint6;
 typedef ap_uint<14> uint14;
 typedef unsigned char uint8;
@@ -71,11 +67,6 @@ typedef struct {
 	uint8 walls_size;
 	wall_t walls[MAX_WALLS];
 } world_t;
-
-typedef struct {
-	waypoint_t w;
-	uint14 costs[MAX_WAYPOINTS]; // Cost matrix from the "current" waypoint to the indexed one.
-} distance_t;
  
 //Prototypes
 void toplevel(hls::stream<uint32> &input, hls::stream<uint32> &output);
