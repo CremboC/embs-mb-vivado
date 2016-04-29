@@ -286,11 +286,11 @@ void toplevel(hls::stream<uint32> &input, hls::stream<uint32> &output) {
 	// first have your system work out the minimum distance between every pair of waypoints
 	distance_matrix_i: for (int i = 0; i < world.waypoints_size; i++) {
 #pragma HLS LOOP_TRIPCOUNT min=4 max=12
-		distance_matrix_j: for (int j = 0; j < world.waypoints_size; j++) {
+		distance_matrix_j: for (int j = 0; j <= i; j++) {
 #pragma HLS LOOP_TRIPCOUNT min=4 max=12
-#pragma HLS PIPELINE
 			reset_world();
 			distances[i][j] = a_star(world.waypoints[i], world.waypoints[j]);
+			distances[j][i] = distances[i][j]; // copy over to simplify coding later
 		}
 	}
 
